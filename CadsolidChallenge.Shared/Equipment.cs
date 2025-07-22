@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CadsolidChallenge.Shared
 {
-    internal class Equipment
+    public class Equipment
     {
         public int Id { get; set; }
         public required string Name { get; set; } = string.Empty;
