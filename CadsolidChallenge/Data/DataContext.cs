@@ -11,7 +11,7 @@ namespace CadsolidChallenge.Server.Data
 
         public DbSet<Equipment> Equipment { get; set; }
 
-        public DbSet<Availability> availabilities { get; set; }
+        public DbSet<Availability> Availability { get; set; }
 
     }
 }
