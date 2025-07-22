@@ -43,6 +43,7 @@ namespace CadsolidChallenge.Server.Controllers
         [HttpGet("details/{id}")]
         public async Task<ActionResult<Equipment>> Details(int? id)
         {
+
             if (id == null)
             {
                 return NotFound();
@@ -60,13 +61,51 @@ namespace CadsolidChallenge.Server.Controllers
 
         // POST: Equipments/
         [HttpPost]
-        public async Task<ActionResult> Post(Equipment equipment)
+        public async Task<ActionResult> Post(int id, Equipment equipment)
         {
             _context.Equipment.Add(equipment);
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(Get), new { id = equipment.Id }, equipment);
         
+        }
+
+        [HttpPost("{id}/upload")]
+        public async Task<ActionResult<string>> UploadImagem(int id, IFormFile file)
+        {
+            var equipment = await _context.Equipment.FindAsync(id);
+            if (file == null || file.Length == 0)
+                return BadRequest("Invalid File");
+            if (equipment == null)
+                return BadRequest("User not Found");
+            _context.Entry(equipment).State = EntityState.Modified;
+
+            var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+
+            if (!Directory.Exists(uploadsDir))
+                Directory.CreateDirectory(uploadsDir);
+
+            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+            var filePath = Path.Combine(uploadsDir, fileName);
+
+            using var stream = new FileStream(filePath, FileMode.Create);
+            await file.CopyToAsync(stream);
+
+            var url = $"/uploads/{fileName}";
+            equipment.ImagemUrl = url;         
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!_context.Equipment.Any(e => e.Id == id))
+                    return NotFound();
+
+                throw;
+            }
+            return Ok(url);
         }
 
 

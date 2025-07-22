@@ -19,6 +19,16 @@
         <InputText class="form-control" @bind-Value="equipment.Model" />
     </div>
 
+    @if (!string.IsNullOrEmpty(equipment.ImagemUrl))
+    {
+        <img src="@equipment.ImagemUrl" width="200" class="img-thumbnail mb-3" />
+    }
+
+    <div class="mb-3">
+        <label>Imagem:</label>
+        <InputFile OnChange="OnInputFileChange" />
+    </div>
+
     <button class="btn btn-success" type="submit">Salvar</button>
     <a class="btn btn-secondary ms-2" href="/equipment">Cancelar</a>
 </form>
@@ -28,6 +38,7 @@
 
     Equipment equipment = new();
     bool IsEditMode => Id != null;
+    IBrowserFile? image;
 
     protected override async Task OnInitializedAsync()
     {
@@ -41,9 +52,29 @@
     {
         if (IsEditMode)
             await Http.PutAsJsonAsync($"api/equipments/edit/{equipment.Id}", equipment);
-    else
+        else
             await Http.PostAsJsonAsync("api/equipments/", equipment);
 
         Navigation.NavigateTo("/equipment");
     }
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        image = e.File;
+
+        if (image != null)
+        {
+            var content = new MultipartFormDataContent();
+            var fileContent = new StreamContent(image.OpenReadStream(maxAllowedSize: 10_000_000)); // 10 MB
+            content.Add(fileContent, "file", image.Name);
+
+            var response = await Http.PostAsync("api/equipamentos/upload", content);
+            if (response.IsSuccessStatusCode)
+            {
+                var imageUrl = await response.Content.ReadAsStringAsync();
+                equipment.ImagemUrl = imageUrl;
+            }
+        }
     }
+
+}
