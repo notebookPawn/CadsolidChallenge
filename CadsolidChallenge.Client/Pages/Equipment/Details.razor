@@ -1,0 +1,36 @@
+﻿@page "/equipment/details/{Id:int}"
+@using CadsolidChallenge.Shared
+@inject HttpClient Http
+
+<h3>Detalhes equipamento</h3>
+
+<form disabled method="" @formname="Details">
+    <AntiforgeryToken />
+
+    <div class="mb-3">
+        <label>Nome:</label>
+        <InputText disabled class="form-control" @bind-Value="equipment.Name" />
+    </div>
+
+    <div class="mb-3">
+        <label>Modelo:</label>
+        <InputText disabled class="form-control" @bind-Value="equipment.Model" />
+    </div>
+
+    <a class="btn btn-secondary ms-2" href="/equipment">Voltar</a>
+</form>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    Equipment equipment = new();
+    bool IsEditMode => Id != null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsEditMode)
+        {
+            equipment = await Http.GetFromJsonAsync<Equipment>($"api/equipments/details/{Id}");
+        }
+    }
+ }

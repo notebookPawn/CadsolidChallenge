@@ -9,7 +9,7 @@ namespace CadsolidChallenge.Shared
     public class Equipment
     {
         public int Id { get; set; }
-        public required string Name { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
         public string Model { get; set; } = string.Empty;
         public string? ImagemUrl { get; set; }
         public List<Availability> Availability { get; set; } = new();

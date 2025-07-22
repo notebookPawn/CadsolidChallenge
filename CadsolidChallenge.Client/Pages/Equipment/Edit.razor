@@ -1,0 +1,49 @@
+﻿@page "/equipment/add"
+@page "/equipment/edit/{Id:int}"
+@using CadsolidChallenge.Shared
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<h3>@(IsEditMode ? "Editar Equipamento" : "Adicionar Equipamento")</h3>
+
+<form method="post" @onsubmit="Save" @formname="SaveEquipment">
+    <AntiforgeryToken />
+
+    <div class="mb-3">
+        <label>Nome:</label>
+        <InputText class="form-control" @bind-Value="equipment.Name" />
+    </div>
+
+    <div class="mb-3">
+        <label>Modelo:</label>
+        <InputText class="form-control" @bind-Value="equipment.Model" />
+    </div>
+
+    <button class="btn btn-success" type="submit">Salvar</button>
+    <a class="btn btn-secondary ms-2" href="/equipment">Cancelar</a>
+</form>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    Equipment equipment = new();
+    bool IsEditMode => Id != null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsEditMode)
+        {
+            equipment = await Http.GetFromJsonAsync<Equipment>($"api/equipments/{Id}");
+        }
+    }
+
+    async Task Save()
+    {
+        if (IsEditMode)
+            await Http.PutAsJsonAsync($"api/equipments/edit/{equipment.Id}", equipment);
+    else
+            await Http.PostAsJsonAsync("api/equipments/", equipment);
+
+        Navigation.NavigateTo("/equipment");
+    }
+    }
