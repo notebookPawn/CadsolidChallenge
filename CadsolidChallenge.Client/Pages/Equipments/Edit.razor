@@ -1,5 +1,5 @@
-﻿@page "/equipment/add"
-@page "/equipment/edit/{Id:int}"
+﻿@page "/equipments/add"
+@page "/equipments/edit/{Id:int}"
 @using CadsolidChallenge.Shared
 @inject HttpClient Http
 @inject NavigationManager Navigation
@@ -30,12 +30,12 @@
     </div>
 
     <div class="mb-3">
-        <label>Data de Início:</label>
+        <label>Data de Início de Avalibilidade:</label>
         <InputDate @bind-Value="inicialDate" class="form-control" />
     </div>
 
     <div class="mb-3">
-        <label>Data de Fim:</label>
+        <label>Data de Fim de Avalibilidade:</label>
         <InputDate @bind-Value="endDate" class="form-control" />
     </div>
     @if (!string.IsNullOrEmpty(validationMessage))
@@ -43,7 +43,7 @@
         <div class="alert alert-danger">@validationMessage</div>
     }
     <button class="btn btn-success" type="submit">Salvar</button>
-    <a class="btn btn-secondary ms-2" href="/equipment">Cancelar</a>
+    <a class="btn btn-secondary ms-2" href="/">Cancelar</a>
 </form>
 
 @code {
@@ -81,7 +81,7 @@
                 equipment.Availability.inicialDate = inicialDate;
                 equipment.Availability.endDate = endDate;
                 await Http.PutAsJsonAsync($"api/equipments/edit/{equipment.Id}", equipment);
-                Navigation.NavigateTo("/equipment");
+                Navigation.NavigateTo("/");
             }
 
             else
@@ -98,7 +98,7 @@
                 {
                     Console.WriteLine("Error");
                 }
-                Navigation.NavigateTo("/equipment");
+                Navigation.NavigateTo("/");
             }
         }
     }
@@ -119,7 +119,6 @@
                 var imageUrl = await response.Content.ReadAsStringAsync();
                 equipment.ImagemUrl = imageUrl;
             }
-            Navigation.NavigateTo("/equipment");
 
         }
         else if (equipment.Id == 0)

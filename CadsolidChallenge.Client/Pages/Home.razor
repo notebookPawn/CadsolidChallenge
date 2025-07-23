@@ -1,7 +1,56 @@
 ﻿@page "/"
+@using CadsolidChallenge.Shared
+@inject HttpClient Http
 
-<PageTitle>Home</PageTitle>
+<h3>Lista de Equipamentos</h3>
 
-<h1>Hello, world!</h1>
+<a class="btn btn-primary mb-3" href="/equipments/add">Adicionar Equipamento</a>
 
-Welcome to your new app.
+@if (equipments == null)
+{
+    <p><em>A carregar...</em></p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Modelo</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var eq in equipments)
+            {
+                <tr>
+                    <td>@eq.Name</td>
+                    <td>@eq.Model</td>
+                    <td>
+                        <a class="btn btn-sm btn-success" href="/equipments/details/@eq.Id">Detalhes</a>
+                        <a class="btn btn-sm btn-warning" href="/equipments/edit/@eq.Id">Editar</a>
+                        <button class="btn btn-sm btn-danger" @onclick="() => ApagarEquipamento(eq.Id)">Apagar</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    List<Equipment>? equipments;
+
+    protected override async Task OnInitializedAsync() => equipments = await Http.GetFromJsonAsync<List<Equipment>>("api/equipments");
+
+    async Task ApagarEquipamento(int id)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", "Tem certeza que deseja apagar?");
+        if (confirmed)
+        {
+            await Http.DeleteAsync($"api/equipments/{id}");
+            equipments = await Http.GetFromJsonAsync<List<Equipment>>("api/equipments");
+        }
+    }
+
+    [Inject] IJSRuntime JS { get; set; } = default!;
+}

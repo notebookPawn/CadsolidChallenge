@@ -1,4 +1,4 @@
-﻿@page "/equipment/details/{Id:int}"
+﻿@page "/equipments/details/{Id:int}"
 @using CadsolidChallenge.Shared
 @inject HttpClient Http
 
@@ -35,7 +35,7 @@
         <InputDate disabled @bind-Value="equipment.Availability.endDate" class="form-control" />
     </div>
 
-    <a class="btn btn-secondary ms-2" href="/equipment">Voltar</a>
+    <a class="btn btn-secondary ms-2" href="/">Voltar</a>
 </form>
 
 @code {
