@@ -29,6 +29,19 @@
         <InputFile OnChange="OnInputFileChange" />
     </div>
 
+    <div class="mb-3">
+        <label>Data de Início:</label>
+        <InputDate @bind-Value="inicialDate" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Data de Fim:</label>
+        <InputDate @bind-Value="endDate" class="form-control" />
+    </div>
+    @if (!string.IsNullOrEmpty(validationMessage))
+    {
+        <div class="alert alert-danger">@validationMessage</div>
+    }
     <button class="btn btn-success" type="submit">Salvar</button>
     <a class="btn btn-secondary ms-2" href="/equipment">Cancelar</a>
 </form>
@@ -39,42 +52,92 @@
     Equipment equipment = new();
     bool IsEditMode => Id != null;
     IBrowserFile? image;
+    MultipartFormDataContent content = new MultipartFormDataContent();
+    DateTime inicialDate, endDate;
+    string validationMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        if (IsEditMode)
-        {
-            equipment = await Http.GetFromJsonAsync<Equipment>($"api/equipments/{Id}");
-        }
+            if (IsEditMode)
+            {
+                equipment = await Http.GetFromJsonAsync<Equipment>($"api/equipments/{Id}");
+                inicialDate = equipment.Availability.inicialDate;
+                endDate = equipment.Availability.endDate;
+            }
+            else
+            {
+                inicialDate = DateTime.Now;
+                endDate = DateTime.Now.AddDays(1);
+            }
+
     }
 
     async Task Save()
     {
-        if (IsEditMode)
-            await Http.PutAsJsonAsync($"api/equipments/edit/{equipment.Id}", equipment);
-        else
-            await Http.PostAsJsonAsync("api/equipments/", equipment);
+        if (checkTime())
+        {
+            if (IsEditMode)
+            {
+                equipment.Availability.inicialDate = inicialDate;
+                equipment.Availability.endDate = endDate;
+                await Http.PutAsJsonAsync($"api/equipments/edit/{equipment.Id}", equipment);
+                Navigation.NavigateTo("/equipment");
+            }
 
-        Navigation.NavigateTo("/equipment");
+            else
+            {
+                content.Add(new StringContent(equipment.Name), "Name");
+                content.Add(new StringContent(equipment.Model), "Model");
+                content.Add(new StringContent(inicialDate.ToString("yyyy-MM-dd")), "inicialDate");
+                content.Add(new StringContent(endDate.ToString("yyyy-MM-dd")), "endDate");
+
+
+                var response = await Http.PostAsync("api/equipments", content);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine("Error");
+                }
+                Navigation.NavigateTo("/equipment");
+            }
+        }
     }
+
 
     private async Task OnInputFileChange(InputFileChangeEventArgs e)
     {
         image = e.File;
 
-        if (image != null)
+        if (image != null && equipment.Id != 0)
         {
-            var content = new MultipartFormDataContent();
-            var fileContent = new StreamContent(image.OpenReadStream(maxAllowedSize: 10_000_000)); // 10 MB
+            var fileContent = new StreamContent(image.OpenReadStream(maxAllowedSize: 10_000_000));
             content.Add(fileContent, "file", image.Name);
 
-            var response = await Http.PostAsync("api/equipamentos/upload", content);
+            var response = await Http.PostAsync($"api/equipments/{equipment.Id}/upload", content);
             if (response.IsSuccessStatusCode)
             {
                 var imageUrl = await response.Content.ReadAsStringAsync();
                 equipment.ImagemUrl = imageUrl;
             }
+            Navigation.NavigateTo("/equipment");
+
         }
+        else if (equipment.Id == 0)
+        {
+            var fileContent = new StreamContent(image.OpenReadStream(maxAllowedSize: 10_000_000));
+            content.Add(fileContent, "image", image.Name);
+        }
+    }
+
+    private bool checkTime()
+    {
+        if (inicialDate >= endDate)
+        {
+            // Exibe uma mensagem ou bloqueia o envio
+            validationMessage = "A data de início deve ser anterior à data de fim.";
+            return false;
+        }
+        return true;
     }
 
 }

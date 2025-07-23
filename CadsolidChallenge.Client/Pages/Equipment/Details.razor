@@ -16,6 +16,24 @@
         <label>Modelo:</label>
         <InputText disabled class="form-control" @bind-Value="equipment.Model" />
     </div>
+    @if (!string.IsNullOrEmpty(equipment.ImagemUrl))
+    {
+        <div class="mb-3">
+            <img src="@equipment.ImagemUrl" width="200" class="img-thumbnail mb-3" />
+
+        </div>
+
+    }
+
+    <div class="mb-3">
+        <label>Data de Início de Avalibilidade:</label>
+        <InputDate disabled @bind-Value="equipment.Availability.inicialDate" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Data de Fim de Avalibilidade:</label>
+        <InputDate disabled @bind-Value="equipment.Availability.endDate" class="form-control" />
+    </div>
 
     <a class="btn btn-secondary ms-2" href="/equipment">Voltar</a>
 </form>

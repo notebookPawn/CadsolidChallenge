@@ -41,7 +41,8 @@ namespace CadsolidChallenge.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EquipmentId");
+                    b.HasIndex("EquipmentId")
+                        .IsUnique();
 
                     b.ToTable("Availability");
                 });
@@ -72,16 +73,19 @@ namespace CadsolidChallenge.Server.Migrations
 
             modelBuilder.Entity("CadsolidChallenge.Shared.Availability", b =>
                 {
-                    b.HasOne("CadsolidChallenge.Shared.Equipment", null)
-                        .WithMany("Availability")
-                        .HasForeignKey("EquipmentId")
+                    b.HasOne("CadsolidChallenge.Shared.Equipment", "Equipment")
+                        .WithOne("Availability")
+                        .HasForeignKey("CadsolidChallenge.Shared.Availability", "EquipmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Equipment");
                 });
 
             modelBuilder.Entity("CadsolidChallenge.Shared.Equipment", b =>
                 {
-                    b.Navigation("Availability");
+                    b.Navigation("Availability")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CadsolidChallenge.Server.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20250722162809_Inital")]
-    partial class Inital
+    [Migration("20250723144041_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -44,7 +44,8 @@ namespace CadsolidChallenge.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EquipmentId");
+                    b.HasIndex("EquipmentId")
+                        .IsUnique();
 
                     b.ToTable("Availability");
                 });
@@ -75,16 +76,19 @@ namespace CadsolidChallenge.Server.Migrations
 
             modelBuilder.Entity("CadsolidChallenge.Shared.Availability", b =>
                 {
-                    b.HasOne("CadsolidChallenge.Shared.Equipment", null)
-                        .WithMany("Availability")
-                        .HasForeignKey("EquipmentId")
+                    b.HasOne("CadsolidChallenge.Shared.Equipment", "Equipment")
+                        .WithOne("Availability")
+                        .HasForeignKey("CadsolidChallenge.Shared.Availability", "EquipmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Equipment");
                 });
 
             modelBuilder.Entity("CadsolidChallenge.Shared.Equipment", b =>
                 {
-                    b.Navigation("Availability");
+                    b.Navigation("Availability")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

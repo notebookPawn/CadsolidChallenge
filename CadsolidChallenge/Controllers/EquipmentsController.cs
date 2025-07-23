@@ -1,16 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using CadsolidChallenge.Server.Data;
+using CadsolidChallenge.Shared;
+using Humanizer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using CadsolidChallenge.Server.Data;
-using CadsolidChallenge.Shared;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace CadsolidChallenge.Server.Controllers
 {
-    
+
     [ApiController]
     [Route("api/[controller]")]
     public class EquipmentsController : Controller
@@ -24,14 +25,14 @@ namespace CadsolidChallenge.Server.Controllers
 
         // GET: Equipments
         public async Task<ActionResult<List<Equipment>>> Get() =>
-         await _context.Equipment.Include(e => e.Availability).ToListAsync();
+         await _context.Equipment.ToListAsync();
 
         // GET: Equipments/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Equipment>> GetEquipmentById(int? id)
         {
 
-            var equipment = await _context.Equipment.FindAsync(id);
+            var equipment = await _context.Equipment.Include(e => e.Availability).FirstOrDefaultAsync(m => m.Id == id);
 
             if (equipment == null)
                 return NotFound();
@@ -50,6 +51,7 @@ namespace CadsolidChallenge.Server.Controllers
             }
 
             var equipment = await _context.Equipment
+                .Include(e => e.Availability)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (equipment == null)
             {
@@ -59,16 +61,52 @@ namespace CadsolidChallenge.Server.Controllers
             return equipment;
         }
 
-        // POST: Equipments/
+        //POST: Equipments/
         [HttpPost]
-        public async Task<ActionResult> Post(int id, Equipment equipment)
-        {
-            _context.Equipment.Add(equipment);
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> Post([FromForm] string name, [FromForm] string model, [FromForm] DateTime? inicialDate, [FromForm] DateTime? endDate, [FromForm] IFormFile? image)
+        { 
+            if (inicialDate >= endDate)
+            {
+                return BadRequest("A data de início deve ser anterior à data de fim.");
+            }
+
+
+            string url = null;
+
+            if (image != null && image.Length > 0)
+            {
+                var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                Directory.CreateDirectory(uploadsDir);
+
+                var fileName = Guid.NewGuid() + Path.GetExtension(image.FileName);
+                var filePath = Path.Combine(uploadsDir, fileName);
+
+                using var stream = new FileStream(filePath, FileMode.Create);
+                await image.CopyToAsync(stream);
+
+                url = $"/uploads/{fileName}";
+            }
+
+            Equipment equipmentToCreate = new Equipment()
+            {
+                Name = name,
+                Model = model,
+                ImagemUrl = url,
+                Availability = new Availability()
+                {
+                    inicialDate = (DateTime)inicialDate,
+                    endDate = (DateTime)endDate,
+                },
+            };
+
+            _context.Equipment.Add(equipmentToCreate);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(Get), new { id = equipment.Id }, equipment);
-        
+            return CreatedAtAction(nameof(Get), new { id = equipmentToCreate.Id }, equipmentToCreate);
+
         }
+
 
         [HttpPost("{id}/upload")]
         public async Task<ActionResult<string>> UploadImagem(int id, IFormFile file)
@@ -92,7 +130,7 @@ namespace CadsolidChallenge.Server.Controllers
             await file.CopyToAsync(stream);
 
             var url = $"/uploads/{fileName}";
-            equipment.ImagemUrl = url;         
+            equipment.ImagemUrl = url;
 
             try
             {
@@ -116,7 +154,13 @@ namespace CadsolidChallenge.Server.Controllers
             if (id != equipment.Id)
                 return BadRequest();
 
+            if (equipment.Availability.inicialDate >= equipment.Availability.endDate)
+            {
+                return BadRequest("A data de início deve ser anterior à data de fim.");
+            }
+
             _context.Entry(equipment).State = EntityState.Modified;
+            _context.Entry(equipment.Availability).State = EntityState.Modified;
 
             try
             {
